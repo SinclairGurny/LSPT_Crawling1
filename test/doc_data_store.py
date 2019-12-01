@@ -4,6 +4,7 @@ Dummy Document Data Store Server
 """
 
 from flask import Flask
+from flask import request
 
 APP = Flask(__name__)
 
@@ -14,6 +15,6 @@ def add_documents():
     :param put: PUT request
     :returns Success status code:
     """
-    # Print out documents    
-    
-    return 200
+    # Print out documents
+    print(request.json)
+    return "OK", 200

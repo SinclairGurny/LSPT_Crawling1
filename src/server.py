@@ -6,12 +6,31 @@ Sends results back to Link Analysis
 and Document Data Store
 """
 
-
-import json
+import sys
+import time
+import requests
+import threading
+from http import HTTPStatus
 from flask import Flask
 from flask import request
 
 APP = Flask(__name__)
+
+LA_URL = "http://localhost:8010"
+DDS_URL = "http://localhost:8020"
+
+def run_job( links ):
+    """
+    """
+    # Crawl cralwer logic on all_links
+    la_result, dds_result = test_crawler(links)
+    # Send results back to Link Analysis
+    global LA_URL
+    send_post(LA_URL, la_result)
+    # Send results to Document Data Store
+    global DDS_URL
+    send_put(DDS_URL, dds_result)
+
 
 @APP.route("/", methods=["POST"])
 def receive_links():
@@ -20,22 +39,38 @@ def receive_links():
     :param post: POST request
     :returns Success status code: but sends POST to LA and DDS
     """
-    return 200
+    all_links = request.json["links"]
+    thread = threading.Thread(target=run_job, args=(all_links,))
+    thread.start()
+    return "OK", HTTPStatus.OK.value
 
-def send_outlinks(olinks):
+def send_post(address, data):
     """
-    py:function:: send_outlinks( olinks )
-    :param olinks: outlinks to send to LA
-    :type olinks: dict
-    :returns None: but sends POST to LA
+    py:function:: send_post(address, data)
+    Sends POST request to address containing data in body
+    :param address: the server to send to
+    :param data: dictionary to include in POST request
     """
-    print(olinks)
+    response = requests.post(address, json=data)
+    if response.status_code != HTTPStatus.OK:
+        sys.stderr.write("ERROR: while sending to "+address)
 
-def send_documents(docs):
+def send_put(address, data):
     """
-    py:function:: send_documents( docs )
-    :param docs: documents to send to DDS
-    :type docs: list
-    :returns None: but sends POST to DDS
     """
-    print(docs)
+    response = requests.put(address, json=data)
+    if response.status_code != HTTPStatus.OK:
+        sys.stderr.write("ERROR: while sending to "+address)
+
+def test_crawler(links):
+    """
+    py:function:: test_crawler(links)
+    Dummy function to simulate a crawler that found nothing
+    """
+    time.sleep(2)
+    out_links = {}
+    out_docs = {}
+    for tmp_link in links:
+        out_links[tmp_link] = dict()
+        out_docs[tmp_link] = dict()
+    return out_links, out_docs
