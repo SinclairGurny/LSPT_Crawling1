@@ -27,7 +27,7 @@ def read_url_file(filename):
         global URL_QUEUE
         f = open(filename, "r")
         for url in f:
-            URL_QUEUE.append(url)
+            URL_QUEUE.append(url.rstrip())
     except:
         sys.stderr.write("ERROR: error while reading input file\n")
         sys.exit(1)

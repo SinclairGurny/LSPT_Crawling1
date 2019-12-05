@@ -18,6 +18,8 @@ import requests
 from flask import Flask
 from flask import request
 
+from crawler import CrawlerProcess
+
 APP = Flask(__name__)
 
 # Addresses of other servers
@@ -31,8 +33,9 @@ def run_job(links):
     :param links: input list from link analysis
     :type links: array of URLs (string)
     """
+    print("INPUT LINKS: ", links)
     # Crawl cralwer logic on all_links
-    la_result, dds_result = test_crawler(links)
+    la_result, dds_result = CrawlerProcess(links)
     # Send results back to Link Analysis
     global LA_URL
     send_post(LA_URL, la_result)
