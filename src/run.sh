@@ -1,3 +1,1 @@
-export FLASK_APP="server.py"
-export FLASK_RUN_PORT=8000
-flask run
+sudo gunicorn --bind 0.0.0.0:80 server:app

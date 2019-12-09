@@ -76,7 +76,7 @@ def OutlinkCheck(OutLinks):
 				continue
 			if("http" in link or "https" in link):
 				try:
-					response = requests.get(link, verify=False)
+					response = requests.get(link)
 				except requests.exceptions.SSLError:
 					print("SSL Error")
 					continue
@@ -147,7 +147,7 @@ def CrawlerProcess(links):
 		if(len(links) > 0):
 			SpecificPageOutLinks = []
 			try:
-				page = requests.get(link, verify=False)
+				page = requests.get(link)
 			except requests.exceptions.SSLError:
 				print("SSL Error")
 				continue
