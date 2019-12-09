@@ -11,7 +11,8 @@ from flask import jsonify
 
 # === Global Variables ===
 
-CRAWL_URL = "http://localhost:8000"
+CRAWL_URL = "http://lspt-crawler1.cs.rpi.edu/crawl"
+#CRAWL_URL = "http://127.0.0.1/crawl"
 
 TEST_FILE = "test_urls1.txt"
 
@@ -54,8 +55,9 @@ def send_next_request():
     last = min(REQ_SIZE, remaining_urls)
     req_list = URL_QUEUE[:last]
     URL_QUEUE = URL_QUEUE[last:]
-    data = {"links": req_list}
+    data = req_list
     response = requests.post(CRAWL_URL, json=data)
+    print( response )
 
 # === Setup ===
 def create_app():

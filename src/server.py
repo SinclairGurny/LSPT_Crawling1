@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 """
 Crawling Server
 --
@@ -20,10 +22,11 @@ from flask import request
 
 from crawler import CrawlerProcess
 
-APP = Flask(__name__)
+app = Flask(__name__)
 
 # Addresses of other servers
-LA_URL = "http://localhost:8010"
+LA_URL = "http://localhost:8010" # testing address
+#LA_URL = "http://lspt-link2.cs.rpi.edu:80" # real address
 DDS_URL = "http://localhost:8020"
 
 def run_job(links):
@@ -35,7 +38,9 @@ def run_job(links):
     """
     print("INPUT LINKS: ", links)
     # Crawl cralwer logic on all_links
+    print("--- Starting crawling ---")
     la_result, dds_result = CrawlerProcess(links)
+    print("--- Finished crawling ---")
     # Send results back to Link Analysis
     global LA_URL
     send_post(LA_URL, la_result)
@@ -44,14 +49,14 @@ def run_job(links):
     send_put(DDS_URL, dds_result)
 
 
-@APP.route("/", methods=["POST"])
+@app.route("/crawl", methods=["POST"])
 def receive_links():
     """
     py:function:: receive_links()
     Handles POST request by Link Analysis
     :return OK: status code 200
     """
-    all_links = request.json["links"]
+    all_links = request.json
     thread = threading.Thread(target=run_job, args=(all_links,))
     thread.start()
     return "OK", HTTPStatus.OK.value
@@ -99,3 +104,7 @@ def test_crawler(links):
         out_links[tmp_link] = dict()
         out_docs[tmp_link] = dict()
     return out_links, out_docs
+
+
+if __name__ == '__main__':
+    app.run(host ='0.0.0.0', port=80)
