@@ -18,7 +18,7 @@ import requests
 from flask import Flask
 from flask import request
 
-from crawler import CrawlerProcess
+from src.crawler import CrawlerProcess
 
 APP = Flask(__name__)
 
