@@ -1,182 +1,175 @@
-# DDS is the middle man 
-# crawl like normal get urls and send to DDS
+"""
+Called from server.py program
+crawls the specified links 
+grabs the raw data and outlinks from each link
+checks the relevancy of each page
+removes bad outlinks from list
+formats data to coincide with DDS and LA standards
 
-
-###########################Crawler Shell##############################
-import re
+py:module:: crawler
+:synopsis: not sure what to put here
+"""
+from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
-# ===============
-# Crawler Process
-# =============== 
+from reppy.robots import Robots
 
+def relevancy_check(link):
+    """
+    py:function:: relevancy_check(link)
+    check if the page is relevant to RPI
+    :param link: link from crawler_process()
+    :type link: string of a url
+    :returns True, False
+    """ 
+    check = False
+    try:
+        page = requests.get(link)
+    except requests.exceptions.SSLError:
+        print("SSL Error")
+        continue
+    except:
+        continue
+    soup = BeautifulSoup(page.content, "html.parser")
+    data = soup.prettify()
+    if "RPI" in data:
+    	check = True
+    if "Rensselaer Polytechnic Institute" in data:
+    	check = True
+    if "Rensselaer" in data:
+    	check = True
+    if "rpi" in data:
+    	check = True
+    return check
+ 
+def strip_url(url):
+	"""
+	py:function:: strip_url(url)
+	make sure that the url ends with a /
+	to create valid links
+	:param url: unformated url from outlink_check()
+	:type url: string of url
+	:returns stripped: formated string of url
+	"""
+    stripped = ""
+    copy = False
+    for char in reversed(url):
+        if copy:
+            stripped += char
+        if char == '/':
+            copy = True
+    stripped = stripped[len(stripped)::-1]
+    return stripped
 
-#for each link
-#	robots: 
-#	relevancy check on link 
-#		relevency check on page 
-#			get outlinks
-#				pink outlinks to see which ones are up 
-#				add valid links 
-#			get data 
+def outlink_check(out_links):
+	"""
+	py:function:: outlink_check(out_links)
+	check if each outlink is valid
+	:param out_links: input list from format_output()
+	:type out_links: list of outlink strings
+	:returns out_links: list of valid outlink strings
+	"""
+    for key in out_links:
+        for link in out_links[key]:
+            if link is None:
+                continue
+            if("http" in link or "https" in link):
+                try:
+                    response = requests.get(link)
+                except requests.exceptions.SSLError:
+                    print("SSL Error")
+                    continue
+                except:
+                    continue
+                if response.status_code != 200:
+                    # print("REMOVED: ", link)
+                    out_links[key].remove(link)
+            elif '/' in link:
+                out_links[key].remove(link)
+                if link[0] != '/':
+                    link = '/' + link
+                stripped_link = strip_url(key)
+                stripped_link += link
+                out_links[key].append(stripped_link)
+            else: 
+                out_links[key].remove(link)
+    return out_links
 
-# This methods purpose is to use robot.parser or another plugin in order
-# To more easily grab the permissions from the robots.txt file and crawl 
-# In an unbiased and non intrusional way 
-#def getRobots():
+def format_output(raw_data, out_links, time):
+	"""
+	py:function:: format_output(raw_data, out_links, time)
+	Formats dictionaries to format specified by DDS and LA
+	:param raw_data: Dictionary of raw data matched with url
+	:param out_links: Dictionary of list of out_links matched with url
+	:param time: datetime object of crawled time
+	:type raw_data: key is url data is string of raw html data from url
+	:type out_links: key is url data us list of outlinks from url
+	:type time: time crawled as datetime object
+	:returns raw_data_ret: formated dic including url, raw data, crawled time, recrawl time
+	:returns out_links_ret: formated dic including urls, corresponding list of outlinks
+	"""
+    out_links_final = outlink_check(out_links)
+    out_links_ret = {}
+    raw_data_final = raw_data
+    for key in out_links_final:
+        out_links_ret[key] = {"links": out_links_final[key], "status_code" : 200}
+    raw_data_ret = {}
+    for key in raw_data:
+        raw_data_ret[key] = {"url" : key, 
+                             "body" : raw_data[key], 
+                             "crawledDateTime" : time, 
+                             "recrawlDateTime" : time}
+    return out_links_ret, raw_data_final
 
+def robots_check(link):
+	"""
+	py:function:: robots_check(link)
+	Checks if webpage is allowed to be crawled
+	:param link: link from crawler_process
+	:type link: string containing the url
+	:returns allow: true if allowed, false if not
+	"""
+    robots = None
+    allow = True
+    url = Robots.robots_url(link)
+    if 'http' in url:
+        try:
+            robots = Robots.fetch(url)
+        except requests.exceptions.SSLError:
+            print("SSLError")
+            allow = False
+        except:
+            allow = False
 
-# this method will first check the relevancy of the link itself first and if it passes the relevancy check then 
-# It will move to check the relevancy of the contents of the page on a basic level. 
-def RelevancyCheck(): 
-	return 0
+    if not robots is None:
+        allow = robots.allowed(link, 'agent')
+    return allow
 
-
-
-# Permission Process Function
-# ===========================
-# Function to check the root directory for crawling Permissions
-# -------------------------------------------------------------
-
-# =============== ============= ===========  ========== =========
-# Requirements    Inputs        Changes      Outputs    Throws 
-# =============== ============= ===========  ========== =========
-# None            List of links Hash Table   None       None
-# =============== ============= ===========  ========== =========
-
-# This function prematurly precosses each robots.txt file and stores them in 
-# a hashtable with the key being the doc ID for the website and the value bing
-# the rules of crawling for that website. 
-# urllib.robotparser
-
-def Permissions(): 
-	return 0
-
-#case check for email. 
-def StripURL(URL):
-	stripped = ""
-	copy = False
-	for c in reversed(URL):
-		if copy == True:
-			stripped += c
-		if c == '/':
-			copy = True
-
-	stripped = stripped[len(stripped)::-1]
-	return stripped
-
-
-
-
-def OutlinkCheck(OutLinks):
-	for key in OutLinks:
-		for link in OutLinks[key]:
-			if link == None:
-				continue
-			if("http" in link or "https" in link):
-				try:
-					response = requests.get(link)
-				except requests.exceptions.SSLError:
-					print("SSL Error")
-					continue
-				except:
-					continue
-				if response.status_code != 200:
-					# print("REMOVED: ", link)
-					OutLinks[key].remove(link)
-
-			elif '/' in link:
-				OutLinks[key].remove(link)
-
-				if(link[0] != '/'):
-					link = '/' + link
-
-				stripped_link = StripURL(key)
-				stripped_link += link
-				OutLinks[key].append(stripped_link)
-
-			else: 
-				OutLinks[key].remove(link)
-
-
-
-
-	return OutLinks
-
-
-
-def FormatOutput(RawData, OutLinks, Time):
-	OutLinksFinal = OutlinkCheck(OutLinks)
-	OutLinksRet = {}
-	RawDataFinal = RawData
-	for key in OutLinksFinal:
-		OutLinksRet[key] = {"links": OutLinksFinal[key], "status_code" : 200}
-
-	RawDataRet = {}
-	for key in RawData:
-		RawDataRet[key] = {"url" : key, "body" : RawData[key], "crawledDateTime" : Time, "recrawlDateTime" : Time}
-
-
-
-	return OutLinksRet, RawDataFinal
-
-
-
-# Crawling Process Function
-# ===========================
-# Function to crawl each website by each permission
-# -------------------------------------------------------------
-
-# ====================     =============     ========== ==============================
-# Requirements             Inputs            Outputs    Throws 
-# ====================     =============     ========== ==============================
-# Valid List of Links      List of links     None       Error if link no longer exists
-# ====================     =============.    ========== ==============================
-  
-
-# This function crawls each page by the robots.txt permissions from the root
-# directory. It grabs the raw text data from the website. It then grabs the 
-# outlinks from the websites and calls the Document Data Sore's API with the 
-# crawl time, raw text, and website link
-
-def CrawlerProcess(links):
-	RawData = {}
-	OutLinks = {}
-	for link in links:
-		if(len(links) > 0):
-			SpecificPageOutLinks = []
-			try:
-				page = requests.get(link)
-			except requests.exceptions.SSLError:
-				print("SSL Error")
-				continue
-			except:
-				continue
-			soup = BeautifulSoup(page.content, "html.parser")
-			RawData[link] = soup.prettify()
-
-			for OutLink in soup.find_all('a'):
-				SpecificPageOutLinks.append(OutLink.get('href'))
-
-			OutLinks[link] = SpecificPageOutLinks
-
-			now = datetime.now()
-			print("Crawling page " + link + " completed at " + now.strftime("%I:%M:%S %p"))
-
-	return FormatOutput(RawData, OutLinks, datetime.now())
-
-#debugging Purposes
-#def main(links):
-#	links = ["http://cs.rpi.edu/~goldsd/index.php", "https://science.rpi.edu/computer-science", "https://www.rpi.edu"]
-#	links = ["https://www.rpi.edu"]
-#	Crawler(links)
-
-#links = ["http://cs.rpi.edu/~goldsd/index.php", "https://science.rpi.edu/computer-science", "https://www.rpi.edu"]
-#main(links)
-
-
-
-
-
-######################################################################
+def crawler_process(links):
+	"""
+	py:function:: crawler_process(links)
+	Crawls each page and grabs raw html and outlinks
+	:param links: list of links from server.py
+	:type links: list of strings containing each url
+	"""
+    raw_data = {}
+    out_links = {}
+    for link in links:
+        if len(links) > 0:
+            specific_page_out_links = []
+            try:
+                page = requests.get(link)
+            except requests.exceptions.SSLError:
+                print("SSL Error")
+                continue
+            except:
+                continue
+            soup = BeautifulSoup(page.content, "html.parser")
+            if relevancy_check(link) and robots_check(link):
+	            raw_data[link] = soup.prettify()
+	            for out_link in soup.find_all('a'):
+	                specific_page_out_links.append(out_link.get('href'))
+	            out_links[link] = specific_page_out_links
+            	now = datetime.now()
+            print("Crawling page " + link + " completed at " + now.strftime("%I:%M:%S %p"))
+    return format_output(raw_data, out_links, datetime.now())
