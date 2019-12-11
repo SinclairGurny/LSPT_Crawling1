@@ -38,8 +38,10 @@ def run_job(links):
     print("INPUT LINKS: ", links)
     # Crawl cralwer logic on all_links
     print("--- Starting crawling ---")
+    t = time.time()
     la_result, dds_result = crawler_process(links)
-    print("--- Finished crawling ---")
+    elapsed_time = time.time() - t
+    print("--- Finished crawling ---", elapsed_time, "seconds")
     # Send results back to Link Analysis
     global LA_URL
     send_post(LA_URL, la_result)
