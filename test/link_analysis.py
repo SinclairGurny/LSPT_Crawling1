@@ -11,8 +11,8 @@ from flask import jsonify
 
 # === Global Variables ===
 
-CRAWL_URL = "http://lspt-crawler1.cs.rpi.edu/crawl"
-#CRAWL_URL = "http://127.0.0.1/crawl"
+#CRAWL_URL = "http://lspt-crawler1.cs.rpi.edu/crawl"
+CRAWL_URL = "http://127.0.0.1/crawl"
 
 TEST_FILE = "test_urls1.txt"
 
